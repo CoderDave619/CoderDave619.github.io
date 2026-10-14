@@ -1,0 +1,27 @@
+{
+  "_how_to_edit": "weekly: each company's regular TV shows and the day they air (US Eastern time). events: big shows with their date (YYYY-MM-DD). ppv: true marks a pay-per-view or WWE Premium Live Event. Matches for each show are found automatically in the news headlines.",
+  "weekly": [
+    {"company": "WWE", "show": "Raw", "day": "Monday", "network": "Netflix"},
+    {"company": "NXT", "show": "NXT", "day": "Tuesday", "network": "The CW"},
+    {"company": "AEW", "show": "Dynamite", "day": "Wednesday", "network": "TBS"},
+    {"company": "ROH", "show": "ROH TV", "day": "Thursday", "network": "HonorClub"},
+    {"company": "TNA", "show": "iMPACT", "day": "Thursday"},
+    {"company": "WWE", "show": "SmackDown", "day": "Friday", "network": "USA Network"},
+    {"company": "CMLL", "show": "Super Viernes", "day": "Friday", "network": "Arena México"},
+    {"company": "AEW", "show": "Collision", "day": "Saturday", "network": "TNT"}
+  ],
+  "events": [
+    {"company": "AEW", "name": "WrestleDream", "date": "2026-10-17", "place": "Orlando, FL", "ppv": true},
+    {"company": "AEW", "name": "Fright Night", "date": "2026-10-28", "place": "St. Louis, MO"},
+    {"company": "NXT", "name": "Halloween Havoc", "date": "2026-10-31", "ppv": true},
+    {"company": "AEW", "name": "Blood & Guts", "date": "2026-11-04", "place": "Jacksonville, FL"},
+    {"company": "WWE", "name": "Crown Jewel", "date": "2026-11-07", "place": "Riyadh, Saudi Arabia", "ppv": true},
+    {"company": "AEW", "name": "Full Gear", "date": "2026-11-14", "place": "Phoenix, AZ", "ppv": true},
+    {"company": "WWE", "name": "Survivor Series: WarGames", "date": "2026-11-28", "place": "Houston, TX", "ppv": true},
+    {"company": "AEW", "name": "Winter Is Coming", "date": "2026-12-09", "place": "Monterrey, Mexico"},
+    {"company": "WWE", "name": "Wrestlepalooza", "date": "2026-12-12", "place": "Perth, Australia", "ppv": true},
+    {"company": "AEW", "name": "Worlds End", "date": "2026-12-19", "place": "Minneapolis, MN", "ppv": true},
+    {"company": "AAA", "name": "Guerra de Titanes", "date": "2026-12-19", "ppv": true},
+    {"company": "AEW", "name": "Holiday Bash", "date": "2026-12-23", "place": "Chicago, IL"}
+  ]
+}

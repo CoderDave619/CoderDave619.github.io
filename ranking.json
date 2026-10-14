@@ -1,0 +1,74 @@
+{
+  "_how_to_edit": "Controls how the site decides which stories are biggest. A story's score goes up when more of your sources report it, when its headline has big-news words, and when it comes from a trusted source. Scores fade as stories get older. Stories at or above majorScore always show (up to maxPerCompany in layout.json).",
+  "halfLifeHours": 18,
+  "majorScore": 2.5,
+  "sameStoryMatch": 0.5,
+  "sourceTrust": {
+    "Fightful": 1.2,
+    "PWInsider": 1.2,
+    "Wrestling Observer": 1.25,
+    "WWE.com": 0.9,
+    "Bleacher Report": 1.0,
+    "Lucha Central": 1.0,
+    "Superluchas": 1.0
+  },
+  "bigNewsWords": {
+    "passed away": 2.0,
+    "dies": 2.0,
+    "death": 1.5,
+    "released": 1.2,
+    "fired": 1.2,
+    "retires": 1.2,
+    "retirement": 1.0,
+    "arrested": 1.2,
+    "new champion": 1.2,
+    "title change": 1.2,
+    "wins": 0.6,
+    "loses": 0.5,
+    "signs": 1.0,
+    "signed": 1.0,
+    "free agent": 0.8,
+    "contract": 0.6,
+    "leaves": 0.8,
+    "departure": 0.8,
+    "injury": 1.0,
+    "injured": 1.0,
+    "surgery": 0.8,
+    "suspended": 1.0,
+    "lawsuit": 1.0,
+    "returns": 0.8,
+    "return": 0.5,
+    "debut": 0.6,
+    "breaking": 0.8,
+    "main event": 0.4,
+    "announced": 0.3
+  },
+  "lowValueWords": {
+    "podcast": -0.6,
+    "roundup": -0.5,
+    "recap": -0.3,
+    "preview": -0.3,
+    "rumor": -0.5,
+    "ranking": -0.4,
+    "ratings": -0.2,
+    "opinion": -0.6,
+    "quiz": -0.8,
+    "photos": -0.5,
+    "top 10": -0.5,
+    "ten matches": -0.4,
+    "watch": -0.2
+  },
+  "engagement": {
+    "_note": "Stories that people are talking about rank higher. Each source is optional; if one can't be reached, the site just skips it.",
+    "weight": 0.35,
+    "reddit": {
+      "enabled": true,
+      "subreddit": "SquaredCircle",
+      "limit": 100
+    },
+    "bluesky": {
+      "enabled": true,
+      "handles": []
+    }
+  }
+}

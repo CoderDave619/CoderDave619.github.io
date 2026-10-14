@@ -1,0 +1,311 @@
+{
+  "_how_to_edit": "Colors are hex codes. \"keywords\" are words in a headline that mean the story is about that company. Which companies get big sections, and their order, is set in layout.json. \"tvShows\" (weekly TV) and \"events\" (PPVs and premium live events) group numbers in the ticker. TV shows list Viewers, Tickets and Gate; events list Tickets, Gate and PPV buys, except WWE and NXT events, which list Tickets, Gate and Viewers since they stream instead of selling PPVs. \"showColors\" gives each show its own color in the ticker; shows without one use the company color. Optional \"bannerFrom\", \"bannerTo\", \"bannerText\", \"bannerName\" (company name color) and \"bannerBorder\" override a section banner's background and text colors. Optional \"logo\" is an image in the logos folder shown on the section banner in place of the company name.",
+  "companies": [
+    {
+      "name": "WWE",
+      "color": "#d0021b",
+      "color2": "#1f4fbf",
+      "tagline": "Raw \u00b7 SmackDown",
+      "keywords": [
+        "WWE",
+        "Raw",
+        "SmackDown",
+        "WrestleMania",
+        "Royal Rumble",
+        "SummerSlam",
+        "Survivor Series"
+      ],
+      "tvShows": [
+        "Raw",
+        "SmackDown",
+        "Saturday Night's Main Event"
+      ],
+      "events": [
+        "WrestleMania",
+        "Royal Rumble",
+        "SummerSlam",
+        "Survivor Series",
+        "Elimination Chamber",
+        "Money in the Bank",
+        "Crown Jewel",
+        "Clash in Paris",
+        "Night of Champions",
+        "Backlash",
+        "Bad Blood",
+        "Wrestlepalooza"
+      ],
+      "showColors": {
+        "Raw": "#d0021b",
+        "SmackDown": "#1f6feb",
+        "Saturday Night's Main Event": "#7b61ff",
+        "WrestleMania": "#8a5cf6",
+        "Royal Rumble": "#c9d1d9",
+        "SummerSlam": "#ff8a00",
+        "Survivor Series": "#2d9cdb",
+        "Elimination Chamber": "#8b949e",
+        "Money in the Bank": "#2ea043",
+        "Crown Jewel": "#e3b341",
+        "Backlash": "#f85149",
+        "Bad Blood": "#b22222",
+        "Night of Champions": "#d4af37",
+        "Clash in Paris": "#0055a4",
+        "Wrestlepalooza": "#ff4fa3"
+      },
+      "logo": "logos/wwe.png",
+      "bannerFrom": "#1f4fbf",
+      "bannerTo": "#d0021b"
+    },
+    {
+      "name": "AEW",
+      "color": "#c9a45c",
+      "color2": "#c9a45c",
+      "tagline": "Dynamite \u00b7 Collision",
+      "keywords": [
+        "AEW",
+        "All Elite",
+        "Dynamite",
+        "Collision",
+        "All In",
+        "Double or Nothing",
+        "Full Gear",
+        "Revolution"
+      ],
+      "tvShows": [
+        "Dynamite",
+        "Collision",
+        "Rampage"
+      ],
+      "events": [
+        "All In",
+        "All Out",
+        "Double or Nothing",
+        "Full Gear",
+        "Revolution",
+        "Worlds End",
+        "Forbidden Door",
+        "Dynasty",
+        "WrestleDream",
+        "Blood & Guts",
+        "Fright Night",
+        "Holiday Bash",
+        "Winter Is Coming"
+      ],
+      "showColors": {
+        "Dynamite": "#f5b700",
+        "Collision": "#e03c31",
+        "Rampage": "#3fb950",
+        "All In": "#e5c07b",
+        "All Out": "#c678dd",
+        "Double or Nothing": "#d19a66",
+        "Full Gear": "#56b6c2",
+        "Revolution": "#e06c75",
+        "Worlds End": "#9da5b4",
+        "Forbidden Door": "#61afef",
+        "Dynasty": "#be5046"
+      },
+      "bannerFrom": "#050505",
+      "bannerTo": "#1b1b1b",
+      "bannerText": "#f2f2f2",
+      "bannerName": "#c9a45c",
+      "bannerBorder": "#f2f2f2",
+      "logo": "logos/aew.png"
+    },
+    {
+      "name": "NXT",
+      "color": "#d9b310",
+      "color2": "#b08d0a",
+      "tagline": "WWE's developmental brand",
+      "keywords": [
+        "NXT",
+        "Halloween Havoc",
+        "Stand & Deliver",
+        "NXT Deadline",
+        "NXT Battleground",
+        "NXT No Mercy",
+        "NXT Heatwave",
+        "Vengeance Day"
+      ],
+      "tvShows": [
+        "NXT"
+      ],
+      "events": [
+        "Halloween Havoc",
+        "Stand & Deliver",
+        "Deadline",
+        "Battleground",
+        "No Mercy",
+        "Heatwave",
+        "Vengeance Day"
+      ],
+      "showColors": {
+        "NXT": "#d9b310",
+        "Halloween Havoc": "#ff7518",
+        "Stand & Deliver": "#00b3a4",
+        "Deadline": "#a371f7",
+        "Battleground": "#8b5a2b",
+        "No Mercy": "#c9302c",
+        "Heatwave": "#ff5f1f",
+        "Vengeance Day": "#b31b1b"
+      },
+      "bannerText": "#111111"
+    },
+    {
+      "name": "AAA",
+      "color": "#d01f2f",
+      "color2": "#0d0d0d",
+      "tagline": "Lucha Libre AAA Worldwide",
+      "keywords": [
+        "AAA",
+        "Triplemania",
+        "Lucha Libre AAA"
+      ],
+      "tvShows": [],
+      "events": [
+        "Triplemania",
+        "Verano de Escandalo",
+        "Guerra de Titanes"
+      ],
+      "showColors": {
+        "Triplemania": "#e4002b",
+        "Verano de Escandalo": "#ffb000",
+        "Guerra de Titanes": "#00a650"
+      },
+      "bannerFrom": "#d01f2f",
+      "bannerTo": "#0d0d0d",
+      "bannerText": "#ffffff",
+      "logo": "logos/aaa.png"
+    },
+    {
+      "name": "CMLL",
+      "color": "#1d4fa8",
+      "color2": "#d52b1e",
+      "tagline": "Arena M\u00e9xico",
+      "keywords": [
+        "CMLL",
+        "Arena Mexico",
+        "Arena M\u00e9xico"
+      ],
+      "tvShows": [
+        "Super Viernes"
+      ],
+      "events": [
+        "Aniversario",
+        "Homenaje a Dos Leyendas"
+      ],
+      "showColors": {
+        "Aniversario": "#c9a227",
+        "Homenaje a Dos Leyendas": "#5b8def",
+        "Super Viernes": "#1f4fa3"
+      },
+      "bannerFrom": "#123f96",
+      "bannerTo": "#c8251a",
+      "bannerText": "#ffffff",
+      "logo": "logos/cmll.png"
+    },
+    {
+      "name": "ROH",
+      "color": "#e0282e",
+      "color2": "#0a0a0a",
+      "tagline": "Ring of Honor",
+      "keywords": [
+        "ROH",
+        "Ring of Honor"
+      ],
+      "tvShows": [],
+      "events": [
+        "Final Battle",
+        "Supercard of Honor",
+        "Death Before Dishonor"
+      ],
+      "showColors": {
+        "Final Battle": "#b5121b",
+        "Supercard of Honor": "#4c6ef5",
+        "Death Before Dishonor": "#8b0000"
+      },
+      "bannerFrom": "#0a0a0a",
+      "bannerTo": "#2a0a0d",
+      "bannerText": "#f2f2f2",
+      "bannerName": "#e0282e"
+    },
+    {
+      "name": "TNA",
+      "color": "#e6e6e6",
+      "color2": "#111111",
+      "keywords": [
+        "TNA",
+        "Impact Wrestling",
+        "Bound for Glory"
+      ],
+      "tvShows": [],
+      "events": [
+        "Bound for Glory",
+        "Slammiversary",
+        "Hard To Kill"
+      ],
+      "showColors": {
+        "Bound for Glory": "#2b6cb0",
+        "Slammiversary": "#f0883e",
+        "Hard To Kill": "#da3633"
+      }
+    },
+    {
+      "name": "NJPW",
+      "color": "#d0021b",
+      "color2": "#111111",
+      "keywords": [
+        "NJPW",
+        "New Japan",
+        "Wrestle Kingdom",
+        "G1"
+      ],
+      "tvShows": [],
+      "events": [
+        "Wrestle Kingdom",
+        "Dominion",
+        "G1 Climax"
+      ],
+      "showColors": {
+        "Wrestle Kingdom": "#d4af37",
+        "Dominion": "#c0392b",
+        "G1 Climax": "#e67e22"
+      }
+    },
+    {
+      "name": "NWA",
+      "color": "#888",
+      "color2": "#111",
+      "keywords": [
+        "NWA"
+      ]
+    },
+    {
+      "name": "MLW",
+      "color": "#888",
+      "color2": "#111",
+      "keywords": [
+        "MLW",
+        "Major League Wrestling"
+      ]
+    },
+    {
+      "name": "GCW",
+      "color": "#888",
+      "color2": "#111",
+      "keywords": [
+        "GCW",
+        "Game Changer Wrestling"
+      ]
+    },
+    {
+      "name": "Stardom",
+      "color": "#e4007f",
+      "color2": "#a3005c",
+      "keywords": [
+        "Stardom"
+      ],
+      "bannerFrom": "#e4007f",
+      "bannerTo": "#a3005c",
+      "bannerText": "#ffffff"
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "_how_to_edit": "Easiest way: use the layout editor page, drag things where you want them and press Save, then ask Claude to apply it. Sizes are in rem (1 rem is about 16 pixels). columns lists each column left to right with what sits in it top to bottom; @moments, @spotlight and @promotions are the photo slideshow, the Meltzer box and the More Promotions list.",
+  "totalStories": 14,
+  "minPerCompany": 1,
+  "maxPerCompany": 6,
+  "titleSize": 2.4,
+  "companyNameSize": 1.15,
+  "headlineSize": 0.9,
+  "showNumbers": true,
+  "numbersToShow": 8,
+  "maxPerSmallSection": 2,
+  "momentsToShow": 8,
+  "momentsDays": 30,
+  "momentsSeconds": 6,
+  "pageWidth": 1200,
+  "columns": [
+    {
+      "width": 1,
+      "autoSort": false,
+      "blocks": [
+        "WWE"
+      ]
+    },
+    {
+      "width": 1,
+      "autoSort": false,
+      "blocks": [
+        "AEW"
+      ]
+    },
+    {
+      "width": 1,
+      "autoSort": true,
+      "blocks": [
+        "NXT",
+        "AAA",
+        "CMLL",
+        "ROH",
+        "Stardom"
+      ]
+    },
+    {
+      "width": 1.05,
+      "autoSort": false,
+      "blocks": [
+        "@moments",
+        "@upcoming",
+        "@spotlight",
+        "@promotions"
+      ]
+    }
+  ],
+  "promotions": [
+    "TNA",
+    "NJPW",
+    "NWA",
+    "MLW",
+    "GCW"
+  ],
+  "hidden": [],
+  "upcomingToShow": 10,
+  "upcomingEventDays": 60
+}
