@@ -1,9 +1,9 @@
 [
   {"name": "Fightful", "url": "https://www.fightful.com/rss.xml"},
-  {"name": "PWInsider", "url": "https://www.pwinsider.com/rss.php"},
+  {"name": "PWInsider", "url": "https://pwinsider.com/latestnews.php", "type": "page", "linkPattern": "pwinsider\\.com/article/\\d+/"},
   {"name": "Wrestling Observer", "url": "https://www.f4wonline.com/feed"},
-  {"name": "WWE.com", "url": "https://www.wwe.com/feeds/rss/news"},
-  {"name": "Bleacher Report", "url": "https://bleacherreport.com/articles/feed?tag_id=19"},
+  {"name": "WWE.com", "url": "https://www.wwe.com/news", "type": "page", "linkPattern": "wwe\\.com/article/"},
+  {"name": "Bleacher Report", "url": "https://bleacherreport.com/wwe", "type": "page", "linkPattern": "bleacherreport\\.com/articles/"},
   {"name": "Lucha Central", "url": "https://www.luchacentral.com/feed/"},
-  {"name": "Superluchas", "url": "https://www.superluchas.com/feed/"}
+  {"name": "Superluchas", "url": "https://superluchas.com/feed/"}
 ]

@@ -9,6 +9,7 @@ import json
 import math
 import re
 import urllib.request
+from urllib.parse import urljoin
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -73,12 +74,62 @@ def fetch(feed):
             # Social posts (like Bluesky feeds) have no headline, so use the start of the post.
             post = re.sub(r"<[^>]+>", "", html.unescape(text(e, "description")))
             title = post if len(post) <= 140 else post[:137].rsplit(" ", 1)[0] + "..."
+        title = tidy_title(title)
         link = text(e, "link", f"{atom}link")
         date = parse_date(text(e, "pubDate", f"{atom}updated", f"{atom}published"))
         if title and link.startswith("http"):
             summary = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(text(e, "description", f"{atom}summary"))))[:800]
             items.append({"title": title, "link": link, "date": date, "source": feed["name"], "image": find_image(e, atom),
                           "summary": summary})
+    return items
+
+
+BROWSER = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
+ACRONYMS = {"WWE", "AEW", "NXT", "TNA", "ROH", "AAA", "CMLL", "NJPW", "NWA", "MLW", "GCW", "PPV", "PLE", "TV", "ID", "CM", "UK", "USA",
+            "LA", "NYC", "MSG", "DDP", "RVD", "JBL", "AJ", "MJF", "CWC", "IWGP", "2K26", "2K27", "II", "III", "IV"}
+SMALL = {"a", "an", "and", "as", "at", "but", "by", "for", "in", "of", "on", "or", "the", "to", "vs", "vs.", "with"}
+
+
+def tidy_title(title):
+    """Some sites write headlines in ALL CAPS. Turn those into normal title case."""
+    if not title.isupper():
+        return title
+    out = []
+    for i, w in enumerate(title.split()):
+        core = re.sub(r"[^A-Z0-9]", "", w)
+        if core in ACRONYMS:
+            out.append(w)
+        elif i and w.lower() in SMALL:
+            out.append(w.lower())
+        else:
+            out.append(re.sub(r"[a-z]", lambda m: m.group().upper(), w.lower(), count=1))
+    return " ".join(out)
+
+
+def fetch_page(feed):
+    """For sites without a news feed: read the headline links off one of their web pages.
+
+    linkPattern picks out article links. A date like 10/14/2026 5:44 PM (US Eastern)
+    printed just after a headline is used as its time.
+    """
+    req = urllib.request.Request(feed["url"], headers={"User-Agent": BROWSER})
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        page = resp.read().decode("utf-8", "replace")
+    items, seen = [], set()
+    for m in re.finditer(r"<a\s[^>]*?href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", page, re.S | re.I):
+        link = urljoin(feed["url"], html.unescape(m.group(1)))
+        if link in seen or not re.search(feed["linkPattern"], link):
+            continue
+        title = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", m.group(2)))).strip()
+        if len(title) < 20:
+            continue
+        seen.add(link)
+        when = re.search(r"(\d{1,2}/\d{1,2}/\d{4})\s+(\d{1,2}:\d{2}\s*[AP]M)", page[m.end():m.end() + 400])
+        date = (datetime.strptime(f"{when.group(1)} {when.group(2).replace(' ', '')}", "%m/%d/%Y %I:%M%p")
+                .replace(tzinfo=EASTERN).astimezone(timezone.utc) if when else None)
+        items.append({"title": tidy_title(title), "link": link, "date": date, "source": feed["name"], "image": "", "summary": ""})
+        if len(items) >= MAX_PER_FEED:
+            break
     return items
 
 
@@ -625,7 +676,11 @@ def main():
     items, failed = [], []
     for feed in feeds:
         try:
-            items += fetch(feed)
+            got = fetch_page(feed) if feed.get("type") == "page" else fetch(feed)
+            print(f"{feed['name']}: {len(got)} headlines")
+            if not got:
+                raise ValueError("no headlines found")
+            items += got
         except Exception as err:
             print(f"Skipping {feed['name']}: {err}")
             failed.append(feed["name"])
