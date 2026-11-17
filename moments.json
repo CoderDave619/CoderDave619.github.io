@@ -1,16 +1,5 @@
 [
  {
-  "title": "Jay White returns to action at AEW WrestleDream 2026",
-  "link": "https://www.f4wonline.com/news/aew/jay-white-returns-to-action-at-aew-wrestledream-2026/",
-  "image": "https://www.f4wonline.com/wp-content/uploads/2025/04/jaywhiteinjury.jpeg",
-  "source": "Wrestling Observer",
-  "date": "2026-10-18T00:02:27+00:00",
-  "popularity": 5.4,
-  "tags": [
-   "AEW"
-  ]
- },
- {
   "title": "Ilja Dragunov in-ring debut set for next AEW Dynamite",
   "link": "https://www.f4wonline.com/news/aew/ilja-dragunov-in-ring-debut-set-for-next-aew-dynamite/",
   "image": "https://www.f4wonline.com/wp-content/uploads/2026/10/HU4bhAXWgAAczpm-scaled.jpg",
@@ -105,17 +94,6 @@
   "source": "Fightful",
   "date": "2026-11-15T05:20:34+00:00",
   "popularity": 4.5,
-  "tags": [
-   "AEW"
-  ]
- },
- {
-  "title": "Updated AEW WrestleDream betting odds released",
-  "link": "https://www.f4wonline.com/news/aew/updated-aew-wrestledream-betting-odds-released/",
-  "image": "https://www.f4wonline.com/wp-content/uploads/2026/10/AEW-WrestleDream-2026-Poster.jpg",
-  "source": "Wrestling Observer",
-  "date": "2026-10-17T14:19:03+00:00",
-  "popularity": 4.125,
   "tags": [
    "AEW"
   ]
@@ -620,6 +598,40 @@
   ]
  },
  {
+  "title": "Spike Dudley opens up about signing WWE Legends contract",
+  "link": "https://www.f4wonline.com/news/wwe/spike-dudley-opens-up-about-signing-wwe-legends-contract/",
+  "image": "https://www.f4wonline.com/wp-content/uploads/2025/08/spikequit.jpg",
+  "source": "Wrestling Observer",
+  "date": "2026-11-16T22:41:35+00:00",
+  "popularity": 3.2,
+  "tags": [
+   "WWE"
+  ]
+ },
+ {
+  "title": "Daily Update: Usman and Umar Nurmagomedov released from jail, big night for CMLL",
+  "link": "https://www.f4wonline.com/news/daily-updates/daily-update-usman-and-umar-nurmagomedov-released-from-jail-big-night-for-cmll/",
+  "image": "https://www.f4wonline.com/wp-content/uploads/2026/11/CMLL-NJPW-Lucha-Kingdom-Main-Event.jpg",
+  "source": "Wrestling Observer",
+  "date": "2026-11-16T23:11:49+00:00",
+  "popularity": 2.75,
+  "tags": [
+   "CMLL"
+  ]
+ },
+ {
+  "title": "Report: ROH wrestler fired from AEW after being \u2018dishonest\u2019 about family issue",
+  "link": "https://www.f4wonline.com/news/aew/report-roh-wrestler-fired-from-aew-after-being-dishonest-about-family-issue/",
+  "image": "https://www.f4wonline.com/wp-content/uploads/2026/05/ROH-Spoilers-from-Palm-Beach-Gardens-New-champion-crowned.jpg",
+  "source": "Wrestling Observer",
+  "date": "2026-11-16T21:55:51+00:00",
+  "popularity": 2.75,
+  "tags": [
+   "AEW",
+   "ROH"
+  ]
+ },
+ {
   "title": "Former WWE star reveals he\u2019s signed a Legends deal",
   "link": "https://www.f4wonline.com/news/wwe/former-wwe-star-reveals-hes-signed-a-legends-deal/",
   "image": "https://www.f4wonline.com/wp-content/uploads/2026/10/WWE-Logo-2026.jpg",
@@ -631,25 +643,12 @@
   ]
  },
  {
-  "title": "Ken Anderson Confirms He Has Signed A WWE Legends Deal",
-  "link": "https://www.fightful.com/wrestling-news/ken-anderson-confirms-he-has-signed-a-wwe-legends-deal",
-  "image": "https://d1fcaprh3kb5t7.cloudfront.net/wp-content/uploads/2026/06/07125145/hq720-10.jpg?v=20261115210017",
-  "source": "Fightful",
-  "date": "2026-11-15T18:47:06+00:00",
-  "popularity": 2.4,
-  "tags": [
-   "WWE"
-  ]
- },
- {
-  "title": "TJP Returns To TNA During Ultimate X Match At TNA Destination X",
-  "link": "https://www.fightful.com/wrestling-news/tjp-returns-to-tna-during-ultimate-x-match-at-tna-destination-x",
-  "image": "https://d1fcaprh3kb5t7.cloudfront.net/wp-content/uploads/2026/11/15202901/HXNRz1tXsAAq-D7.jpg?v=20261116013112",
-  "source": "Fightful",
-  "date": "2026-11-16T01:31:12+00:00",
-  "popularity": 2.16,
-  "tags": [
-   "TNA"
-  ]
+  "title": "ECW legend The Sandman coming out of retirement",
+  "link": "https://www.f4wonline.com/news/indies/ecw-legend-the-sandman-coming-out-of-retirement/",
+  "image": "https://www.f4wonline.com/wp-content/uploads/2026/01/The-Sandman-wwe-1280x720-1.jpg",
+  "source": "Wrestling Observer",
+  "date": "2026-11-16T19:22:09+00:00",
+  "popularity": 2.5,
+  "tags": []
  }
 ]
