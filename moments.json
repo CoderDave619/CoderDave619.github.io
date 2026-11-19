@@ -132,17 +132,6 @@
   ]
  },
  {
-  "title": "TNA Wrestling re-signs Santino Marella",
-  "link": "https://www.f4wonline.com/news/tna-wrestling/tna-wrestling-re-signs-santino-marella/",
-  "image": "https://www.f4wonline.com/wp-content/uploads/2024/05/tnalogos.jpeg",
-  "source": "Wrestling Observer",
-  "date": "2026-10-20T16:43:15+00:00",
-  "popularity": 4.0,
-  "tags": [
-   "TNA"
-  ]
- },
- {
   "title": "Enzo Amore reportedly signs with WWE",
   "link": "https://www.f4wonline.com/news/wwe/enzo-amore-reportedly-signs-with-wwe/",
   "image": "https://www.f4wonline.com/wp-content/uploads/2026/11/Enzo-Amore-reportedly-signs-with-WWE.jpg",
@@ -216,17 +205,6 @@
   "popularity": 3.78,
   "tags": [
    "AEW"
-  ]
- },
- {
-  "title": "WWE Raw on Netflix ratings released for October 12 episode",
-  "link": "https://www.f4wonline.com/news/wwe/wwe-raw-on-netflix-ratings-released-october-12-2026/",
-  "image": "https://www.f4wonline.com/wp-content/uploads/2026/10/20261005_RAW_6man_16x9_tonight.jpg",
-  "source": "Wrestling Observer",
-  "date": "2026-10-20T20:05:55+00:00",
-  "popularity": 3.75,
-  "tags": [
-   "WWE"
   ]
  },
  {
@@ -649,6 +627,24 @@
   "source": "Fightful",
   "date": "2026-11-18T19:03:34+00:00",
   "popularity": 2.4,
+  "tags": []
+ },
+ {
+  "title": "\u2018Good news\u2019 on Jim Ross after shunt surgery",
+  "link": "https://www.f4wonline.com/news/aew/good-news-on-jim-ross-after-shunt-surgery/",
+  "image": "https://www.f4wonline.com/wp-content/uploads/2026/08/jrupdates.jpg",
+  "source": "Wrestling Observer",
+  "date": "2026-11-19T15:09:55+00:00",
+  "popularity": 2.25,
+  "tags": []
+ },
+ {
+  "title": "Next hearing date set in Ludwig Kaiser battery case",
+  "link": "https://www.f4wonline.com/news/wwe/next-hearing-date-set-in-ludwig-kaiser-battery-case/",
+  "image": "https://www.f4wonline.com/wp-content/uploads/2026/05/wwekaiser.jpeg",
+  "source": "Wrestling Observer",
+  "date": "2026-11-19T21:48:13+00:00",
+  "popularity": 2.0,
   "tags": []
  }
 ]
