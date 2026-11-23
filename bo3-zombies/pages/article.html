@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Article · The Codex</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-root="../">
+  <header class="site-header" data-header></header>
+
+  <div class="wiki wrap">
+    <aside class="wiki-nav" id="wikinav"></aside>
+
+    <article class="wiki-article">
+      <div class="crumbs" id="crumbs"></div>
+      <div class="page-tabs" id="tabs"></div>
+      <div id="flash"></div>
+      <h1 class="wiki-title" id="title"></h1>
+      <p class="wiki-sub" id="sub"></p>
+
+      <div id="view-read">
+        <div class="hatnote" id="hatnote"></div>
+        <div class="wiki-body">
+          <aside class="infobox" id="infobox"></aside>
+          <div id="lead"></div>
+          <nav class="toc" id="toc"></nav>
+          <div id="sections"></div>
+          <h2 id="references">References</h2>
+          <ol class="refs" id="refs"></ol>
+        </div>
+        <table class="navbox" id="navbox"></table>
+        <div class="catlinks" id="catlinks"></div>
+        <p class="lastedit" id="lastedit"></p>
+      </div>
+      <div id="view-edit" hidden></div>
+      <div id="view-history" hidden></div>
+      <div id="view-report" hidden></div>
+    </article>
+  </div>
+
+  <footer class="site-footer" data-footer></footer>
+  <script src="../data.js"></script>
+  <script src="../templates.js"></script>
+  <script src="../accounts.js"></script>
+  <script>
+    const _S = window.SITE;
+    const _p = new URLSearchParams(location.search), _slug = _p.get("a");
+    let _a = _S.articles.find(x => _S.slug(x.title) === _slug);
+    if (!_a) {   // Wanted page: linked but not written yet -> show a stub
+      const gg = _S.game(_p.get("g")) || _S.games[0];
+      _a = { title: _p.get("t") || (_slug || "Untitled").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()), game: gg.id,
+             category: (gg.categories || ["lore"])[0], stub: true, summary: "a page that hasn't been written yet.",
+             sections: [{ title: "This page doesn't exist yet", body: "Other articles link here, but nobody has written this page. Use Suggest edit (or Submit a correction if you're not signed in) to propose the first version." }], references: [] };
+    }
+    document.body.dataset.game = _a.game;
+  </script>
+  <script src="../app.js"></script>
+  <script src="../lock.js"></script>
+  <script>
+    const S = window.SITE, A = S.auth, a = _a, g = S.game(a.game), cat = S.cat(a.category);
+    const slug = S.slug(a.title), arts = S.articles.filter(x => x.game === g.id);
+    const $ = id => document.getElementById(id);
+    const _ee = (a.sections || []).find(x => x.steps);
+    document.title = _ee ? `${a.title} Easter egg guide, story and secrets · ${S.short(g)} Zombies · ${S.siteName}` : `${a.title} · ${S.short(g)} · ${S.siteName}`;
+
+    // ---------- Content: template text + published edits ----------
+    const htmlToText = h => (h || "").replace(/<\/p>\s*<p>/g, "\n\n").replace(/<[^>]+>/g, "").trim();
+    const textToHtml = t => wikilink((t || "").split(/\n\s*\n/).filter(p => p.trim()).map(p => `<p>${S.esc(p.trim()).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>")}</p>`).join(""));
+    // [[Title]] or [[Title|text]] -> wiki link (red if the page doesn't exist yet)
+    const exists = t => S.articles.some(x => x.title.toLowerCase() === t.toLowerCase());
+    const wikilink = html => html.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, t, label) => {
+      t = t.trim(); const ok = exists(t), real = ok ? S.articles.find(x => x.title.toLowerCase() === t.toLowerCase()).title : t;
+      return `<a class="wl ${ok ? "" : "wanted"}" data-preview="${S.esc(real)}" href="${S.artUrl(real)}${ok ? "" : `&g=${a.game}&t=${encodeURIComponent(real)}`}">${label || t}</a>`; });
+    const cite = html => html.replace(/\[ref:(\d+)\]/g, (_, n) => `<sup class="ref"><a href="#cite-${n}">[${n}]</a></sup>`);
+    const original = () => {
+      const o = { "Lead": `${a.title} is ${a.summary.charAt(0).toLowerCase() + a.summary.slice(1)}${(a.sections || []).length >= 3 ? "" : "\n\nThe lead section summarizes the whole article in two or three short paragraphs, so a reader who stops here still learns the essentials. Details belong in the sections below."}` };
+      buildSections(a).forEach(s => { o[s.title] = htmlToText(s.body); (s.sub || []).forEach(t => o[s.title + " › " + t.title] = htmlToText(t.body)); });
+      return o;
+    };
+    const current = () => Object.assign(original(), A.published(slug));
+
+    // ---------- Tabs (what shows depends on tier) ----------
+    let view = "read";
+    function tabs() {
+      const u = A.user(), locked = A.isLocked(slug);
+      let edit;
+      if (!u) edit = locked ? `<span>🔒 Locked</span>` : `<button data-view="edit">Submit a correction</button>`;
+      else if (A.can("publish", slug)) edit = `<button data-view="edit">${locked ? "🔒 " : ""}Edit</button>`;
+      else if (A.can("suggest", slug)) edit = `<button data-view="edit">Suggest edit</button>`;
+      else edit = `<span title="${A.isBanned() ? "Your account is banned" : "This page is locked by a moderator"}">🔒 ${A.isBanned() ? "Banned" : "Locked"}</span>`;
+      $("tabs").innerHTML = `
+        <button data-view="read" class="${view === "read" ? "on" : ""}">Article</button><span>Talk</span>
+        <span class="right"></span>
+        ${edit.replace('data-view="edit"', `data-view="edit" class="${view === "edit" ? "on" : ""}"`)}
+        <button data-view="history" class="${view === "history" ? "on" : ""}">History</button>
+        ${A.can("lock") ? `<button data-act="lock">${locked ? "Unlock page" : "Lock page"}</button>` : ""}
+        ${u ? `<button data-view="report" class="report-btn ${view === "report" ? "on" : ""}" title="Report a problem with this page">⚑ Report</button>` : ""}`;
+      $("tabs").querySelectorAll("[data-view]").forEach(b => b.onclick = () => show(b.dataset.view));
+      const lk = $("tabs").querySelector("[data-act=lock]");
+      if (lk) lk.onclick = () => { const on = A.toggleLock(slug); flash(on ? "Page locked. Only moderators can edit it now." : "Page unlocked.", "ok"); tabs(); renderRead(); };
+    }
+    function show(v) {
+      view = v; $("flash").innerHTML = "";
+      ["read", "edit", "history", "report"].forEach(x => $("view-" + x).hidden = x !== v);
+      ({ edit: renderEdit, history: renderHistory, report: renderReport, read: renderRead })[v]();
+      tabs(); window.scrollTo({ top: 0 });
+    }
+    function flash(msg, kind) { $("flash").innerHTML = `<div class="flash ${kind || ""}">${msg}</div>`; }
+
+    // ---------- Static parts ----------
+    $("wikinav").innerHTML = `
+      <a class="wn-game" href="${S.gameUrl(g.id)}"><span class="wn-art" style="${S.art(g.title, g.color)}"></span>${S.esc(S.short(g))} wiki</a>
+      <div class="wn-group"><b>Navigation</b>
+        <a href="${S.gameUrl(g.id)}">Game hub</a>${S.shows(g, "basics") ? `<a href="${S.basicsUrl(g.id)}">Basic information</a>` : ""}${S.shows(g, "competitive") ? `<a href="${S.compUrl(g.id)}">Competitive</a>` : ""}<a href="${S.catUrl(g.id)}">All pages</a><a href="${S.forumUrl(g.id)}">Forum</a></div>
+      <div class="wn-group"><b>Browse</b>
+        ${S.gameCats(g).map(c => `<a href="${S.catUrl(g.id, c.id)}" class="${c.id === cat.id ? "on" : ""}">${c.icon} ${c.name}</a>`).join("")}</div>`;
+    $("crumbs").innerHTML = S.crumbs(g, [[cat.name, S.catUrl(g.id, cat.id)], [a.title, null]]);
+    $("title").textContent = a.title;
+    $("sub").innerHTML = `From the <a href="${S.gameUrl(g.id)}">${S.esc(S.short(g))} wiki</a> on ${S.siteName}`;
+    // Zombies maps: one page per game version, with a switcher between versions
+    if (a.category === "zombies" && S.zmVersions) {
+      const mapName = a.title.replace(/ \((?!Vanguard)[^)]*\)$/, ""), vs = S.zmVersions(mapName);
+      if (vs.length > 1) $("sub").insertAdjacentHTML("afterend", `<nav class="zm-versions" aria-label="Other versions of this map"><span class="small muted">Versions:</span>${vs.map(v => {
+        const lbl = `${S.esc(v.game.replace(/^Call of Duty: /, ""))}${v.tag ? ` <span class="tag">${v.tag === "chronicles" ? "Zombies Chronicles" : v.tag}</span>` : ""}`;
+        const gid = (S.series.find(x => x.id === "cod").entries.find(e => e[0] === v.game) || [])[2];
+        return v.title === a.title ? `<b>${lbl}</b>` : `<a href="${S.articles.some(x => x.title === v.title) ? S.artUrl(v.title) : gid ? `${S.artUrl(v.title)}&g=${gid}&t=${encodeURIComponent(v.title)}` : S.zmMapUrl(mapName)}">${lbl}</a>`; }).join("")}<a href="${S.zmMapUrl(mapName)}">All versions →</a></nav>`);
+    }
+    const facts = Object.assign({ Game: g.title, Category: cat.name }, a.facts || {});
+    $("infobox").innerHTML = `
+      <div class="ib-title">${S.esc(a.title)}</div>
+      <div class="ib-img" style="${S.art(a.title, g.color)}">${a.category === "zombies" ? `<img src="${(document.body.dataset.root || "") + S.imgPath(g.id, a.title, "map")}" alt="${S.esc(a.title)} map overview" onerror="this.remove()">` : ""}<span>${a.category === "zombies" ? "Map screenshot coming" : "Image placeholder"}</span></div>
+      <div class="ib-cap">${S.esc(a.title)} as seen in ${S.esc(g.title)}</div>
+      <div class="ib-section">General information</div>
+      <table>${Object.entries(facts).map(([k, v]) => `<tr><th>${S.esc(k)}</th><td>${S.esc(v)}</td></tr>`).join("")}</table>`;
+    $("refs").innerHTML = (a.stub ? [] : buildReferences(a)).map((r, i) => `<li id="cite-${i + 1}">${S.esc(r).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')}</li>`).join("");
+    $("navbox").innerHTML = `<tr><th colspan="2" class="nb-title"><a href="${S.gameUrl(g.id)}">${S.esc(g.title)}</a></th></tr>` +
+      S.gameCats(g).map(c => {
+        const list = arts.filter(x => x.category === c.id);
+        if (!list.length) return "";
+        return `<tr><th>${c.name}</th><td>${list.map(x => x === a ? `<b>${S.esc(x.title)}</b>` : `<a href="${S.artUrl(x.title)}">${S.esc(x.title)}</a>`).join(" · ")}</td></tr>`;
+      }).join("");
+    $("catlinks").innerHTML = `<b>Categories:</b> <a href="${S.catUrl(g.id, cat.id)}">${cat.name}</a> · <a href="${S.catUrl(g.id)}">${S.esc(g.title)}</a> · ${a.stub ? `<a href="#">Wanted pages</a>` : ""}`;
+
+    // ---------- Read view ----------
+    function renderRead() {
+      const c = current(), sections = buildSections(a), locked = A.isLocked(slug);
+      $("hatnote").innerHTML = (locked ? "🔒 This page is locked by a moderator. " : "") +
+        (a.stub ? `This page hasn't been written yet. You can propose the first version.` : a.sections ? `This article may contain spoilers.` : `⚠ Stub: this page uses the standard <b>${cat.name.toLowerCase()}</b> outline with placeholder text. Help expand it.`) +
+        (() => { const se = S.seriesOf(g), en = se && se.entries.find(e => e[2] === g.id), h = en && S.codComp && S.codComp[en[0]];
+          return a.title === g.competitiveArticle && h && !h.noScene ? ` For every LAN, placement and roster, see <a href="${S.compHistUrl(en[0])}">${S.esc(S.short(g))} competitive history</a>.` : ""; })();
+      const fmtL = t => S.esc(t || "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/VERIFY/g, '<span class="badge-verify">VERIFY</span>');
+      let leadHtml = cite(textToHtml(c["Lead"])).replace("<p>", '<p class="lede">');
+      const t = S.esc(a.title); if (leadHtml.includes('<p class="lede">' + t)) leadHtml = leadHtml.replace('<p class="lede">' + t, `<p class="lede"><b>${t}</b>`);
+      const eeSec = sections.find(x => x.steps);
+      if (eeSec && !a.stub) leadHtml += `<div class="quick-jump"><a class="btn btn-primary btn-sm" href="#s-${S.slug(eeSec.title)}">How to do the ${S.esc(a.title.replace(/^The /, ""))} Easter egg →</a>${sections.filter(x => x !== eeSec && /lore|story|side|glitch|mechanic|buildable|gobble/i.test(x.title)).map(x => `<a class="btn btn-ghost btn-sm" href="#s-${S.slug(x.title)}">${S.esc(x.title)}</a>`).join("")}</div>`;
+      // Map at a glance: a.features = { perks: [[name, where]], pap, box: [...], wonder: [...], gum, walls: [...], traps: [...], other: [[name, what]], note }
+      if (a.features && !a.stub) { const f = a.features, sec = re => { const x = sections.find(y => re.test(y.title)); return x ? `#s-${S.slug(x.title)}` : null; };
+        const row = (icon, label, val, link) => val && (!Array.isArray(val) || val.length) ? `<tr><th><span class="fx-ico">${icon}</span>${label}</th><td>${Array.isArray(val) ? val.map(v => Array.isArray(v) ? `<b>${S.esc(v[0])}</b>${v[1] ? ` <span class="muted">· ${fmtL(v[1])}</span>` : ""}` : fmtL(v)).join("<br>") : fmtL(val)}${link ? ` <a class="small" href="${link}">Details ↓</a>` : ""}</td></tr>` : "";
+        leadHtml += `<section class="map-glance" id="map-features"><div class="mg-head">Map at a glance</div>${f.note ? `<p class="small muted">${fmtL(f.note)}</p>` : ""}<div class="table-scroll"><table class="mg-table">
+          ${row("🥤", "Perk-a-Colas", f.perks)}${row("⚙", "Pack-a-Punch", f.pap, sec(/easter egg/i) && /ritual|easter|quest/i.test(f.pap || "") ? sec(/^main easter egg/i) : null)}${row("🎁", "Mystery Box", f.box)}
+          ${row("✨", "Wonder weapons", f.wonder, sec(/buildable/i))}${row("🍬", "GobbleGum", f.gum, sec(/gobblegum/i))}${row("🔫", "Wall-buys", f.walls)}${row("⚡", "Traps", f.traps)}${row("📍", "Also on the map", f.other, sec(/mechanic/i))}
+        </table></div></section>`; }
+      if (!a.stub && S.coachPanel) { const ct = a.category === "competitive" ? "competitive" : a.category === "tech" ? "tech" : a.category === "zombies" && a.sections ? "map" : a.sections ? "article" : null;
+        if (ct) leadHtml += S.coachPanel(ct, ct === "competitive" || ct === "tech" ? g.id : a.title, { game: g.id }); }
+      $("lead").innerHTML = leadHtml;
+      const vfRender = box => { const c = JSON.parse(box.dataset.valves), g = box.querySelector(".vf-g").value, t = box.querySelector(".vf-t").value, out = box.querySelector(".vf-out");
+        if (g === t) { out.innerHTML = `<p class="small muted">The green light and the pipe are always at two different valves. Pick another pipe spot.</p>`; return; }
+        const code = c[g][t]; out.innerHTML = `<ol class="vf-list">${[g].concat(Object.keys(code).filter(k => k !== g && k !== t), [t]).map(k => `<li><span>${S.esc(k)}${k === g ? ' <em class="small muted">(green light)</em>' : ""}</span><b>${code[k] === "T" ? "Pipe: any" : "Set to " + code[k]}</b></li>`).join("")}</ol>`; };
+      document.addEventListener("change", e => { const b = e.target.closest(".valve-finder"); if (b) vfRender(b); });
+      setTimeout(() => document.querySelectorAll(".valve-finder").forEach(vfRender), 0);
+      document.addEventListener("click", e => { const b = e.target.closest(".media-play"); if (!b) return;
+        const f = document.createElement("iframe"); f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(b.dataset.yt)}?autoplay=1&rel=0${+b.dataset.start ? "&start=" + (+b.dataset.start) : ""}`;
+        f.title = b.getAttribute("aria-label"); f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true; f.loading = "lazy"; b.replaceWith(f); });
+      document.addEventListener("click", e => { const b = e.target.closest("[data-ee]"); if (b) document.querySelectorAll(".ee-steps details").forEach(d => d.open = b.dataset.ee === "open"); });
+      let tocHtml = "", secHtml = "", lastCh = null;
+      sections.forEach((s, i) => {
+        const id = "s-" + S.slug(s.title), n = i + 1;
+        const fmt = t => cite(S.esc(t || "").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")).replace(/VERIFY/g, '<span class="badge-verify">VERIFY</span>');
+        // Chapters group topics (Map features, Game features, Easter eggs and quests, Media and lore)
+        if (s.chapter && s.chapter !== lastCh) { lastCh = s.chapter; const cb = (a.chapterBlurbs || {})[s.chapter];
+          secHtml += `<div class="chapter-head" id="ch-${S.slug(s.chapter)}"><span class="chapter-kicker">Chapter</span><h2>${S.esc(s.chapter)}</h2>${cb ? `<p class="small muted">${S.esc(cb)}</p>` : ""}</div>`;
+          tocHtml += `<li class="toc-chapter"><a href="#ch-${S.slug(s.chapter)}">${S.esc(s.chapter)}</a></li>`; }
+        tocHtml += `<li><a href="#${id}"><span>${n}</span>${S.esc(s.title)}</a>`;
+        secHtml += `<section class="wsec"><h2 id="${id}">${S.esc(s.title)}${s.level ? `<span class="lvl-tag lvl-${s.level.toLowerCase()}">${S.esc(s.level)}</span>` : ""}<button type="button" class="sec-toggle" aria-label="Collapse section" title="Collapse or expand">▾</button></h2><div class="wsec-body">${s.brief ? `<p class="in-short"><b>In short:</b> ${cite(wikilink(S.esc(s.brief).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")))}</p>${(c[s.title] || "").trim() ? `<details class="layer"><summary>${/lore|story/i.test(s.title) ? "Full story" : "Full detail"}</summary><div>${cite(textToHtml(c[s.title]))}</div></details>` : ""}` : cite(textToHtml(c[s.title]))}`;
+        // Quick-reference table: section.table = { cols: [...], rows: [[...], ...] }
+        if (s.table) secHtml += `<div class="table-scroll"><table class="data-table quick-ref"><thead><tr>${s.table.cols.map(x => `<th>${S.esc(x)}</th>`).join("")}</tr></thead><tbody>${s.table.rows.map(r => `<tr>${r.map((x, k) => `<td>${k === 0 ? `<b>${S.esc(x)}</b>` : cite(S.esc(x))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+        // Extra tables: section.tables = [{ title, cols, rows }]
+        if (s.tables) secHtml += s.tables.map(t => `${t.title ? `<h3 class="sub-h">${S.esc(t.title)}</h3>` : ""}<div class="table-scroll"><table class="data-table quick-ref"><thead><tr>${t.cols.map(x => `<th>${S.esc(x)}</th>`).join("")}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map((x, k) => `<td>${k === 0 ? `<b>${fmtL(String(x))}</b>` : fmtL(String(x))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("");
+        // Topic lists: section.lists = [{ title, items: [...] }]
+        if (s.lists) secHtml += s.lists.map(l => `${l.title ? `<h3 class="sub-h">${S.esc(l.title)}</h3>` : ""}<ul class="quick-list">${l.items.map(x => `<li>${fmtL(x)}</li>`).join("")}</ul>`).join("");
+        // Location grids at section level: section.spawns = [{ item, id, spots, fixed, any, note }]
+        if (s.spawns && !s.steps) secHtml += s.spawns.map(sp => spotGrid(sp.id, sp.item, sp.spots, sp.note, "", sp.fixed, sp.any)).join("");
+        // Side quests as cards: section.eggs = [{ name, what, steps: [...], spawns: [...], reward, warn }]
+        if (s.eggs) secHtml += s.eggs.map(e => `<div class="egg-card" id="egg-${S.slug(e.name)}"><div class="egg-head"><b>${S.esc(e.name)}</b>${e.reward ? `<span class="chip sm">🎁 ${S.esc(e.reward)}</span>` : ""}</div>${e.what ? `<p>${fmtL(e.what)}</p>` : ""}
+            ${e.steps ? `<ol class="ee-do">${e.steps.map(x => `<li>${fmtL(x)}</li>`).join("")}</ol>` : ""}${(e.spawns || []).map(sp => spotGrid(sp.id, sp.item, sp.spots, sp.note, "", sp.fixed, sp.any)).join("")}
+            ${e.warn ? `<p class="ee-call warn"><b>Watch out:</b> ${fmtL(e.warn)}</p>` : ""}</div>`).join("");
+        // Code finder: section.valves = { order: [locations], codes: { green: { tube: { location: number | "T" } } } }
+        if (s.valves) { const o = s.valves.order, opt = (sel) => o.map(x => `<option${x === sel ? " selected" : ""}>${S.esc(x)}</option>`).join("");
+          secHtml += `<div class="valve-finder" data-valves='${S.esc(JSON.stringify(s.valves.codes))}'><div class="vf-pick"><label>Green light at<select class="vf-g">${opt(o[0])}</select></label><label>Pipe (cylinder) at<select class="vf-t">${opt(o[1])}</select></label></div><div class="vf-out" aria-live="polite"></div></div>`; }
+        // Layered depth: essentials first, then "More detail" and "Advanced" (collapsed by default)
+        if (s.more) secHtml += `<details class="layer"><summary>More detail</summary><div>${cite(textToHtml(s.more))}</div></details>`;
+        if (s.advanced) secHtml += `<details class="layer adv"><summary>Advanced notes</summary><div>${cite(textToHtml(s.advanced))}</div></details>`;
+        // Bulleted list: section.items = ["...", ...]
+        if (s.items) secHtml += `<ul class="quick-list">${s.items.map(x => `<li>${cite(textToHtml(x).replace(/^<p>|<\/p>$/g, ""))}</li>`).join("")}</ul>`;
+        // Easter egg guides: requirements checklist, phases, big numbered step cards (one action per line), tick boxes, tip/warning callouts
+        // Possible spawn spots: each spot gets its own picture slot, images/<game>/<map>/<id>-spawn-a.png
+        // spots: ["text", ...] or [{ where, video: [label, url] }]
+        function spotGrid(id, item, spots, note, itemImg, fixed, any) {
+          if (!spots || !spots.length) return "";
+          const L = "abcdefghijklmnop";
+          return `<div class="spot-group"><div class="spot-head">${itemImg || ""}<div><b>${S.esc(item)}</b><span class="small"> · ${spots.length === 1 ? "1 spot" : any ? spots.length + " spots, any one will do" : fixed ? spots.length + " spots, do all of them" : spots.length + " possible spots, only one is used each game"}</span>${note ? `<div class="small">${fmt(note)}</div>` : ""}</div></div>
+            <ol class="spot-grid">${spots.map((sp, i) => { const o = typeof sp === "string" ? { where: sp } : sp; return `<li class="spot">${S.img(S.imgPath(g.id, a.title, id, "spawn-" + L[i]), item + ", spot " + L[i].toUpperCase(), "spot-img")}<div class="spot-body"><span class="spot-l">${L[i].toUpperCase()}</span> ${fmt(o.where)}${o.video ? `<div class="small">▶ <a href="${S.esc(o.video[1])}" target="_blank" rel="noopener">${S.esc(o.video[0])}</a></div>` : ""}</div></li>`; }).join("")}</ol></div>`;
+        }
+        if (s.steps && s.steps.length) {
+          const lines = st => st.do || (st.body || "").split(/(?<=\.)\s+(?=[A-Z])/).filter(Boolean).reduce((acc, x) => { if (/^VERIFY\.?$/.test(x) && acc.length) acc[acc.length - 1] += " VERIFY"; else acc.push(x); return acc; }, []);
+          let lastPhase = null;
+          secHtml += (s.needs ? `<div class="ee-needs"><div class="ee-needs-head">Before you start</div><ul>${s.needs.map(x => `<li>${fmt(x)}</li>`).join("")}</ul></div>` : "")
+            + `<div class="ee-progress" data-key="ee:${slug}"><span class="ee-count">0 of ${s.steps.length} steps done</span><button type="button" class="btn btn-ghost btn-sm" data-ee-reset>Clear ticks</button></div>`
+            + s.steps.map((st, k) => {
+              let head = "";
+              if (st.phase && st.phase !== lastPhase) { head = `${lastPhase ? "</ol>" : ""}<h3 class="ee-phase">${S.esc(st.phase)}</h3><ol class="ee-cards" start="${k + 1}">`; lastPhase = st.phase; }
+              else if (k === 0) head = `<ol class="ee-cards">`;
+              return head + `<li class="ee-card" data-k="${k}"><div class="ee-card-head"><span class="ee-n">${k + 1}</span><span class="ee-title">${S.esc(st.title)}</span><label class="ee-check"><input type="checkbox" data-k="${k}" aria-label="Mark step ${k + 1} done"><span>Done</span></label></div>
+                <ul class="ee-do">${lines(st).map(x => `<li>${fmt(x)}</li>`).join("")}</ul>
+                ${st.where ? `<div class="ee-where"><b>📍 Where</b><ul>${st.where.map(x => `<li>${fmt(x)}</li>`).join("")}</ul></div>` : ""}
+                ${st.spawns ? st.spawns.map(sp => spotGrid(sp.id, sp.item, sp.spots, sp.note, "", sp.fixed, sp.any)).join("") : ""}
+                ${st.video ? `<p class="small ee-video">▶ <a href="${S.esc(st.video[1])}" target="_blank" rel="noopener">${S.esc(st.video[0])}</a></p>` : ""}
+                ${st.tip ? `<p class="ee-call tip"><b>Tip:</b> ${fmt(st.tip)}</p>` : ""}${st.warn ? `<p class="ee-call warn"><b>Watch out:</b> ${fmt(st.warn)}</p>` : ""}
+                ${st.solo ? `<p class="ee-call"><b>Solo:</b> ${fmt(st.solo)}</p>` : ""}${st.coop ? `<p class="ee-call"><b>Co-op:</b> ${fmt(st.coop)}</p>` : ""}</li>`; }).join("") + `</ol>`;
+        }
+        // Buildables: section.buildables = [{ name, what, needs?, parts: [{ name, spawns: [...] }], tables: [...] }]
+        if (s.buildables) secHtml += `<div class="map-ph">Map of part spawns and build tables<br><span class="small">Marked map coming soon</span></div>` + s.buildables.map(bd => `<div class="build-card">${S.img(S.imgPath(g.id, a.title, "buildable", bd.name), bd.name, "card-img")}<div class="build-head"><b>${S.esc(bd.name)}</b></div>
+            <p>${fmt(bd.what)}</p>${bd.needs ? `<p class="ee-call"><b>Needs:</b> ${fmt(bd.needs)}</p>` : ""}
+            ${bd.parts && bd.parts.length ? bd.parts.map(pt => spotGrid("part-" + S.slug(bd.name + " " + pt.name), pt.name, pt.spawns, pt.note, S.img(S.imgPath(g.id, a.title, "part", bd.name + " " + pt.name), bd.name + ": " + pt.name, "thumb"))).join("") : ""}
+            ${bd.tables ? `<p><b>Build at:</b> ${bd.tables.map(x => fmt(x)).join(" · ")}</p>` : ""}</div>`).join("");
+        // Top GobbleGums: section.gums = [{ name, type: "Classic"|"Mega", why, goal? }]
+        if (s.gums) secHtml += `<ol class="gum-list">${s.gums.map(x => `<li><div class="gum-head">${S.img(S.imgPath(g.id, "gums", "gum", x.name), x.name, "thumb mini")}<b>${S.esc(x.name)}</b><span class="gum-type ${x.type === "Mega" ? "mega" : ""}">${S.esc(x.type)}</span>${x.goal ? `<span class="chip sm">${S.esc(x.goal)}</span>` : ""}</div><div class="small">${fmt(x.why)}</div></li>`).join("")}</ol>`
+          + (s.gumNote ? `<p class="small muted">${fmt(s.gumNote)}</p>` : "");
+        if (s.sources) secHtml += `<p class="small muted">Sources: ${s.sources.map(([t, u]) => u ? `<a href="${S.esc(u)}" target="_blank" rel="noopener">${S.esc(t)}</a>` : S.esc(t)).join(" · ")}</p>`;
+        // Media: section.media = [{ kind: "intro"|"outro"|"song", title, by, yt, start, spoiler }]. Nothing loads or plays until clicked.
+        if (s.media) { const K = { intro: "Intro cutscene", outro: "Ending cutscene", song: "Easter egg song" };
+          secHtml += `<div class="media-grid">${s.media.map(m => `<figure class="media-card ${m.spoiler ? "spoiler" : ""}"><div class="media-frame">${m.yt
+              ? `<button type="button" class="media-play" data-yt="${S.esc(m.yt)}" data-start="${m.start || 0}" aria-label="Play ${S.esc(m.title)}">${m.spoiler ? `<span class="media-spoil">⚠ Spoiler: shows the ending</span>` : ""}<span class="media-btn">▶</span><span class="small">Click to play</span></button>`
+              : `<div class="media-empty"><span>🎬</span><span class="small">Video coming</span></div>`}</div>
+            <figcaption><span class="media-kind">${K[m.kind] || S.esc(m.kind)}</span><b>${S.esc(m.title)}</b>${m.by ? `<span class="small muted">${fmt(m.by)}</span>` : ""}${m.how ? `<span class="small">${fmt(m.how)}</span>` : ""}</figcaption></figure>`).join("")}</div>`; }
+        // Notable glitches: section.glitches = [{ name, difficulty, status, what, why, how: [...], src: [[title, url]] }]
+        if (s.glitches && !s.glitches.length && s.none) secHtml += `<div class="stub-box">${fmt(s.none)}</div>`;
+        const gOrder = { "Out of bounds": 1, "God spot": 2, "Other": 3 };
+        if (s.glitches) secHtml += s.glitches.slice().sort((x, y) => (gOrder[x.type] || 3) - (gOrder[y.type] || 3)).map(gl => `<div class="glitch-card">${S.img(S.imgPath(g.id, a.title, "glitch", gl.name), gl.name, "card-img")}<div class="glitch-head">${gl.type ? `<span class="gl-type">${S.esc(gl.type)}</span>` : ""}<b>${S.esc(gl.name)}</b>${gl.difficulty ? `<span class="lvl-tag lvl-${gl.difficulty.toLowerCase()}">${S.esc(gl.difficulty)}</span>` : ""}
+            <span class="status-pill ${/patched/i.test(gl.status) && !/not patched/i.test(gl.status) ? "" : "active"}">${S.esc(gl.status.replace(/\s*\(VERIFY[^)]*\)/, ""))}</span>${/VERIFY/.test(gl.status) ? ' <span class="badge-verify">VERIFY</span>' : ""}</div>
+            <p><b>What it does:</b> ${fmt(gl.what)}</p>${gl.why ? `<p><b>How it works:</b> ${fmt(gl.why).replace(/VERIFY/g, '<span class="badge-verify">VERIFY</span>')}</p>` : ""}
+            ${gl.how ? `<div class="small"><b>Steps</b></div><ol class="ee-do">${gl.how.map(x => `<li>${fmt(x).replace(/VERIFY/g, '<span class="badge-verify">VERIFY</span>')}</li>`).join("")}</ol>` : ""}
+            ${gl.src ? `<p class="small">${gl.src.map(([t, u]) => `▶ <a href="${S.esc(u)}" target="_blank" rel="noopener">${S.esc(t)}</a>`).join("<br>")}</p>` : ""}</div>`).join("");
+        // "Go deeper": after the main Easter egg, point to what lies beyond the basics (no speedrun links, by request)
+        if (s.steps && s.steps.length && a.category === "zombies") {
+          const others = sections.filter(x => x !== s && /side|glitch|mechanic|lore|story/i.test(x.title));
+          const related = S.articles.filter(x => x.game === a.game && x.category === "zombies" && x.title !== a.title && x.sections).slice(0, 5);
+          const lv = x => x.level ? ` <span class="lvl-tag lvl-${x.level.toLowerCase()}">${S.esc(x.level)}</span>` : "";
+          const order = { beginner: 1, intermediate: 2, advanced: 3 };
+          const path = others.slice().sort((x, y) => (order[(x.level || "").toLowerCase()] || 2) - (order[(y.level || "").toLowerCase()] || 2));
+          secHtml += `<aside class="go-deeper"><h3>Next steps</h3><p class="small muted">Done the main quest? Take it further, one level at a time.</p><ol class="path">
+            ${path.map(x => `<li><a href="#s-${S.slug(x.title)}">${S.esc(x.title)}</a>${lv(x)}</li>`).join("")}
+            ${g.techArticle ? `<li><a href="${S.artUrl(g.techArticle)}">${S.esc(S.short(g))} Tech: advanced techniques</a>${lv({ level: "Advanced" })}</li>` : ""}
+            <li><a href="${S.forumUrl(g.id)}">Swap strategies on the ${S.esc(S.short(g))} forum</a></li></ol>
+            ${related.length ? `<p class="small">Other ${S.esc(S.short(g))} maps: ${related.map(x => `<a href="${S.artUrl(x.title)}">${S.esc(x.title)}</a>`).join(" · ")}${S.zombiesMaps ? ` · <a href="zombies.html">every Zombies map</a>` : ""}</p>` : ""}</aside>`;
+        }
+        if (s.sub && s.sub.length) {
+          tocHtml += "<ol>";
+          s.sub.forEach((sub, j) => {
+            const sid = S.slug(sub.title);
+            tocHtml += `<li><a href="#${sid}"><span>${n}.${j + 1}</span>${S.esc(sub.title)}</a></li>`;
+            secHtml += `<h3 id="${sid}">${S.esc(sub.title)}</h3>${cite(textToHtml(c[s.title + " › " + sub.title]))}`;
+          });
+          tocHtml += "</ol>";
+        }
+        secHtml += `</div></section>`;
+        tocHtml += "</li>";
+      });
+      tocHtml += `<li><a href="#references"><span>${sections.length + 1}</span>References</a></li>`;
+      $("toc").innerHTML = `<div class="toc-head">Contents <button type="button" onclick="this.closest('.toc').classList.toggle('closed')">hide</button></div><ol>${tocHtml}</ol>`;
+      // Sticky jump bar for long pages, so every section is one click away
+      const jump = sections.length >= 4 ? `<nav class="jumpbar" aria-label="Jump to section">${sections.map(s => `<a href="#s-${S.slug(s.title)}">${S.esc(s.title)}</a>`).join("")}<a href="#references">Sources</a></nav>` : "";
+      $("sections").innerHTML = jump + secHtml + (a.stub ? "" : S.insiderBlock(a.insider));
+      (() => { const pr = document.querySelector(".ee-progress"); if (!pr) return; const key = pr.dataset.key, boxes = [...document.querySelectorAll(".ee-check input")];
+        let done = []; try { done = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+        const sync = () => { boxes.forEach(b => b.closest(".ee-card").classList.toggle("done", b.checked)); pr.querySelector(".ee-count").textContent = `${boxes.filter(b => b.checked).length} of ${boxes.length} steps done`;
+          try { localStorage.setItem(key, JSON.stringify(boxes.filter(b => b.checked).map(b => +b.dataset.k))); } catch (e) {} };
+        boxes.forEach(b => { b.checked = done.includes(+b.dataset.k); b.onchange = sync; });
+        pr.querySelector("[data-ee-reset]").onclick = () => { boxes.forEach(b => b.checked = false); sync(); }; sync(); })();
+      $("sections").onclick = e => { const b = e.target.closest(".sec-toggle"); if (b) { const sec = b.closest(".wsec"); sec.classList.toggle("collapsed"); b.textContent = sec.classList.contains("collapsed") ? "▸" : "▾"; } };
+      const last = A.history(slug).find(e => /^(published|approved|reverted)$/.test(e.status));
+      $("lastedit").innerHTML = last ? `Last edited ${S.esc(last.when)} by <b>${S.esc(last.author)}</b> ${A.lvl(last.author)}.` : "This page hasn't been edited yet. Content is written by contributors.";
+    }
+
+    // ---------- Edit / suggest / guest submission ----------
+    function renderEdit() {
+      const c = current(), u = A.user(), guest = !u, direct = !guest && A.can("publish", slug), keys = Object.keys(c);
+      const q1 = 2 + Math.floor(Math.random() * 7), q2 = 1 + Math.floor(Math.random() * 8);
+      const heading = guest ? "Submit a correction to" : direct ? "Edit" : "Suggest an edit to";
+      const intro = guest
+        ? `You're not signed in, so this is sent as a <b>guest submission request</b> to the moderators. Guest requests don't earn XP. <a href="${S.accountUrl()}">Sign in</a> to track your edits and level up.`
+        : direct ? `As a ${S.tier(A.tierOf()).name}, your edit publishes immediately and earns +${S.XP.editPublished} XP.`
+        : `Your suggestion goes to the moderator review queue. Approved edits earn +${S.XP.editApproved} XP; rejected ones cost ${S.XP.editRejected} XP.`;
+      $("view-edit").innerHTML = `
+        <form class="post-form editor" id="editform">
+          <h2>${heading} “${S.esc(a.title)}”</h2>
+          <p class="small muted">${intro} Write <code>[ref:1]</code> to cite a reference.</p>
+          <label>Section<select name="section">${keys.map(k => `<option>${S.esc(k)}</option>`).join("")}</select></label>
+          <label>Text<textarea name="text" rows="10"></textarea></label>
+          <label>${direct ? "Edit summary" : "Reason for the change"}<textarea name="summary" rows="2" maxlength="500" required minlength="${direct ? 5 : 30}" placeholder="${direct ? "What did you change?" : "Explain what was wrong or missing and why your version is correct (at least 30 characters)"}"></textarea></label>
+          ${direct ? "" : `<label>Source or proof link<input type="url" name="source" required placeholder="https://… screenshot, video timestamp, patch notes or official page"></label>`}
+          ${direct ? "" : `<p class="small muted">Submissions need the section, the new text, a reason and a source. Low-effort requests are blocked here before reaching moderators.</p>`}
+          ${guest ? `
+          <label>Email (optional)<input type="email" name="email" placeholder="Only used if a moderator has a question"></label>
+          <div class="captcha">
+            <div class="cap-box"><label class="cap-check"><input type="checkbox" name="human" required> I'm not a robot</label>
+              <span class="cap-brand">Bot check placeholder<br><small>Production: Cloudflare Turnstile or hCaptcha</small></span></div>
+            <label>Quick check: what is ${q1} + ${q2}?<input name="math" inputmode="numeric" required style="max-width:120px"></label>
+            <p class="small muted">Limit: ${S.GUEST_LIMIT} guest submissions per hour.</p>
+          </div>` : ""}
+          <div><button class="btn btn-primary" type="submit">${guest ? "Send submission request" : direct ? "Publish edit" : "Submit for review"}</button>
+          <button class="btn btn-ghost" type="button" id="cancel">Cancel</button></div>
+          <span class="form-msg small" id="emsg"></span>
+        </form>`;
+      const f = $("editform"), sel = f.section, ta = f.text;
+      const fill = () => ta.value = c[sel.value];
+      sel.onchange = fill; fill();
+      $("cancel").onclick = () => show("read");
+      f.onsubmit = e => {
+        e.preventDefault();
+        const msg = m => $("emsg").textContent = m;
+        if (ta.value.trim() === c[sel.value].trim()) return msg("No changes to send yet.");
+        const changes = { [sel.value]: ta.value.trim() }, summary = f.summary.value.trim();
+        if (!direct) {
+          if (ta.value.trim().length < 40) return msg("The proposed text is too short. Write at least 40 characters for the section.");
+          if (summary.length < 30) return msg("Please explain the change in at least 30 characters.");
+          if (!/^https?:\/\/\S+\.\S+/.test(f.source.value.trim())) return msg("Add a valid source link (screenshot, video, patch notes or official page).");
+        }
+        const source = f.source ? f.source.value.trim() : "";
+        if (guest) {
+          if (parseInt(f.math.value, 10) !== q1 + q2) return msg("The bot check answer isn't right. Try again.");
+          const r = A.guestSubmit(slug, a.title, changes, summary, f.email.value.trim(), source);
+          if (r === "limited") return msg(`You've reached the limit of ${S.GUEST_LIMIT} guest submissions an hour. Sign in to submit more.`);
+          show("read"); flash("Thanks! Your submission request was sent to the moderators for review.", "ok"); return;
+        }
+        const res = A.submitEdit(slug, a.title, changes, summary, source);
+        show("read");
+        flash(res === "published" ? `Edit published. +${S.XP.editPublished} XP` : "Thanks! Your edit is waiting for a moderator to review it.", "ok");
+      };
+    }
+
+    // ---------- History ----------
+    function renderHistory() {
+      const h = A.history(slug), pend = A.data().pending.filter(e => e.slug === slug), canRevert = A.can("revert");
+      const row = e => `
+        <li><div class="hist-main"><b>${S.esc(e.summary)}</b>
+          <span class="muted small">${S.esc(e.when)} · ${S.esc(e.author)} ${A.lvl(e.author)} ${A.badge(e.tier)} · section: ${Object.keys(e.changes || {}).map(S.esc).join(", ") || "—"}</span>
+          ${e.reason ? `<span class="small muted">Reason: ${S.esc(e.reason)}</span>` : ""}</div>
+          <span class="status ${/^(approved|published)$/.test(e.status) ? "on" : ""}">${S.esc(e.status)}</span>
+          ${canRevert && /^(approved|published)$/.test(e.status) ? `<button class="btn btn-ghost btn-sm" data-revert="${e.id}">Revert</button>` : ""}</li>`;
+      $("view-history").innerHTML = `
+        <section class="hub-box">
+          <h2>Revision history</h2>
+          <p class="small muted">${canRevert ? `As a moderator you can revert any published edit. Reverting costs the author ${S.XP.editReverted} XP.` : "Moderators can revert published edits."}</p>
+          <ul class="hist">${pend.map(e => row(Object.assign({}, e, { status: "pending review" }))).join("")}${h.map(row).join("")}
+            <li><div class="hist-main"><b>Original version</b><span class="muted small">Page created from the article template</span></div><span class="status">original</span></li></ul>
+        </section>`;
+      $("view-history").querySelectorAll("[data-revert]").forEach(b => b.onclick = () => { A.revert(slug, b.dataset.revert); renderHistory(); flash("Edit reverted.", "ok"); });
+    }
+
+    // ---------- Report (accounts only) ----------
+    function renderReport() {
+      $("view-report").innerHTML = `
+        <form class="post-form" id="repform">
+          <h2>Report a problem with this page</h2>
+          <label>Reason<select name="reason"><option>Vandalism</option><option>Incorrect information</option><option>Unmarked spoilers</option><option>Spam or advertising</option><option>Other</option></select></label>
+          <label>Details (optional)<textarea name="details" rows="3"></textarea></label>
+          <div><button class="btn btn-primary" type="submit">Send report</button> <button class="btn btn-ghost" type="button" id="rcancel">Cancel</button></div>
+        </form>`;
+      $("rcancel").onclick = () => show("read");
+      $("repform").onsubmit = e => {
+        e.preventDefault(); const f = new FormData(e.target);
+        A.report("article", slug, a.title, f.get("reason") + (f.get("details") ? ": " + f.get("details") : ""));
+        show("read"); flash(`Report sent to the moderators. If they act on it you earn +${S.XP.reportAccepted} XP.`, "ok");
+      };
+    }
+
+    // Hover preview for inline links
+    const pv = document.createElement("div"); pv.className = "preview-card"; document.body.appendChild(pv);
+    let pvTimer;
+    document.addEventListener("mouseover", e => {
+      const l = e.target.closest("a[data-preview]"); if (!l) return;
+      clearTimeout(pvTimer);
+      pvTimer = setTimeout(() => {
+        const t = S.articles.find(x => x.title === l.dataset.preview);
+        pv.innerHTML = t ? `<div class="pv-art" style="${S.art(t.title, S.game(t.game).color)}"></div><div class="pv-body"><span class="tag">${S.cat(t.category).name}</span><b>${S.esc(t.title)}</b><p>${S.esc(t.summary)}</p></div>`
+                         : `<div class="pv-body"><b>${S.esc(l.dataset.preview)}</b><p>This page hasn't been written yet.</p></div>`;
+        const r = l.getBoundingClientRect();
+        pv.style.left = Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - 336) + "px";
+        pv.style.top = (window.scrollY + r.bottom + 8) + "px";
+        pv.classList.add("on");
+      }, 250);
+    });
+    document.addEventListener("mouseout", e => { if (e.target.closest("a[data-preview]")) { clearTimeout(pvTimer); pv.classList.remove("on"); } });
+
+    tabs(); renderRead();
+    if (location.hash === "#history") show("history");
+    if (location.hash === "#edit") show("edit");
+  </script>
+</body>
+</html>

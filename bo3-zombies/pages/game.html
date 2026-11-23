@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game hub · The Codex</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-root="../">
+  <header class="site-header" data-header></header>
+
+  <section class="game-banner" id="banner">
+    <div class="wrap">
+      <div class="crumbs" id="crumbs"></div>
+      <span class="eyebrow" id="genre"></span>
+      <h1 id="title"></h1>
+      <p class="lead" id="blurb"></p>
+      <div class="banner-stats" id="stats"></div>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <div class="hub-search search">
+      <span class="icon">🔍</span>
+      <input type="search" data-search id="gamesearch" placeholder="Search this wiki…" autocomplete="off" aria-label="Search this game's wiki">
+      <div class="search-results"></div>
+    </div>
+    <nav class="series-strip" id="series" aria-label="Series"></nav>
+    <nav class="hub-tiles" id="tiles" aria-label="Hub sections"></nav>
+
+    <div class="hub">
+      <div class="hub-main" id="hubmain"></div>
+      <aside class="hub-side">
+        <section class="hub-box">
+          <h3>Wiki</h3>
+          <ul class="dyk" id="wikilinks"></ul>
+        </section>
+        <section class="hub-box">
+          <h3>Recently edited</h3>
+          <ul class="dyk" id="recent"></ul>
+        </section>
+        <section class="hub-box">
+          <h3>Wanted pages</h3>
+          <p class="small muted">Linked from other articles but not written yet.</p>
+          <ul class="dyk" id="wanted"></ul>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer" data-footer></footer>
+  <script src="../data.js"></script>
+  <script>
+    { const id = new URLSearchParams(location.search).get("g");
+      const gg = window.SITE.game(id) || window.SITE.games[0];
+      document.body.dataset.game = gg.id;
+      const box = document.getElementById("gamesearch");
+      box.dataset.scope = gg.id; box.placeholder = `Search the ${window.SITE.short(gg)} wiki…`; }
+  </script>
+  <script src="../accounts.js"></script>
+  <script src="../app.js"></script>
+  <script src="../lock.js"></script>
+  <script>
+    const S = window.SITE, g = S.game(document.body.dataset.game);
+    const arts = S.articles.filter(a => a.game === g.id);
+    const hub = Object.assign({}, S.defaultHub, S.hubs[g.id] || {});
+    const has = t => arts.some(a => a.title === t);
+    const artLink = t => has(t) ? `<a href="${S.artUrl(t)}">${S.esc(t)}</a>` : `<a class="wanted" href="${S.artUrl(t)}&g=${g.id}&t=${encodeURIComponent(t)}" title="Not written yet">${S.esc(t)}</a>`;
+    const $ = id => document.getElementById(id);
+
+    document.title = `${S.short(g)} Hub · ${S.siteName}`;
+    $("banner").setAttribute("style", S.art(g.title, g.color));
+    $("crumbs").innerHTML = S.crumbs(g);
+    // Series strip: previous / next and every game in the series
+    const se = S.seriesOf(g);
+    if (se) {
+      const es = se.entries, i = es.findIndex(e => e[2] === g.id);
+      const link = (e, j) => e[2] ? S.gameUrl(e[2]) : `title.html?s=${se.id}&e=${j}`;
+      const prev = es[i - 1], next = es[i + 1];
+      $("series").innerHTML = `
+        <a class="ss-series" href="${S.seriesUrl(se.id)}"><span class="muted small">Series</span><b>${S.esc(se.name)}</b></a>
+        ${prev ? `<a class="ss-nav" href="${link(prev, i - 1)}">← ${S.esc(prev[0])}</a>` : ""}
+        ${next ? `<a class="ss-nav" href="${link(next, i + 1)}">${S.esc(next[0])} →</a>` : ""}
+        <a class="ss-all" href="${S.seriesUrl(se.id)}#timeline">All ${es.length} games</a>`;
+    }
+    $("genre").textContent = `${g.genre} · ${g.year}`;
+    $("title").textContent = g.title;
+    $("blurb").textContent = g.blurb;
+    $("stats").innerHTML = `<span><b>${arts.length}</b> articles</span><span><b>${S.forumThreads(g.id).length}</b> forum threads</span><span><b>${(hub.updates || []).length}</b> updates tracked</span>`;
+
+    // ---- Hub section registry ----
+    // Each entry renders one section and returns "" when the game has no data for it (the section is hidden).
+    // To add a section type: add a renderer here and its id to SITE.hubLayout or the game's hubLayout.
+    const HUB_SECTIONS = {
+      "tech": { title: "Tech", icon: "🧠", render: () => {
+        if (!hub.tech.length) return "";
+        const ta = g.techArticle;
+        return `<div class="sec-head"><h2>🧠 Tech</h2>${ta ? `<a class="more" href="${S.artUrl(ta)}">Full Tech page →</a>` : ""}</div>
+          <p class="muted">Techniques and niche mechanics the game never explains.</p>
+          <div class="mini-cards">${hub.tech.map(t => `<a class="mini" href="${ta ? S.artUrl(ta) + (t.anchor ? "#" + t.anchor : "") : "#"}">
+            <em>${S.esc(t.level || "")}</em><b>${S.esc(t.name)}</b><span>${S.esc(t.body)}</span></a>`).join("")}</div>`; } },
+
+      "competitive": { title: "Competitive", icon: "🏆", render: () => {
+        const c = hub.competitive || {}, ca = g.competitiveArticle;
+        if (!ca && !(c.terms || []).length) return "";
+        return `<div class="sec-head"><h2>🏆 Competitive</h2><a class="more" href="${S.compUrl(g.id)}">Open the Competitive hub →</a></div>
+          <p class="muted">${S.esc(c.blurb || "Streams, results, roster moves and the rules of the competitive scene.")}</p>
+          ${(c.terms || []).length ? `<div>${c.terms.map(t => `<span class="chip">${artLink(t)}</span>`).join("")}</div>` : ""}
+          ${(() => { const se = S.seriesOf(g), en = se && se.entries.find(e => e[2] === g.id), h = en && S.codComp && S.codComp[en[0]];
+            return h && !h.noScene ? `<p style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="${S.compHistUrl(en[0])}">🏆 Competitive history: ${h.events.length} events</a></p>` : ""; })()}`; } },
+
+      "meta": { title: "Current meta", icon: "📈", render: () => {
+        if (!hub.tiers) return "";
+        return `<h2>📈 ${S.esc(hub.metaTitle || "Current meta")}</h2>
+          <div class="tiers">${Object.entries(hub.tiers).map(([t, list]) => `<div class="tier"><span class="t t-${t}">${t}</span><div>${list.map(x => `<span class="chip">${artLink(x)}</span>`).join("")}</div></div>`).join("")}</div>
+          ${hub.builds.length ? `<h3>Popular builds</h3><div class="mini-cards">${hub.builds.map(b => `<div class="mini"><b>${S.esc(b.name)}</b><em>${S.esc(b.tags)}</em><span>${S.esc(b.note)}</span></div>`).join("")}</div>` : ""}
+          <p class="small muted">${S.esc(hub.metaNote || "Community opinion. Placeholder until community voting is built.")}</p>`; } },
+
+      "trending": { title: "Trending pages", icon: "🔥", render: () => {
+        const t = arts.filter(a => a.trending);
+        if (!t.length) return "";
+        return `<h2>🔥 Trending pages</h2>
+          <ol class="trend">${t.slice(0, 8).map(a => `<li><a href="${S.artUrl(a.title)}"><b>${S.esc(a.title)}</b><span class="muted small">${S.cat(a.category).name}</span></a></li>`).join("")}</ol>
+          <p class="small muted">Ranked by views once analytics exist; hand-picked for now.</p>`; } },
+
+      "guides": { title: "Advanced guides", icon: "📖", render: () => {
+        if (!hub.guides.length) return "";
+        return `<h2>📖 Advanced guides</h2>
+          <ul class="guide-list">${hub.guides.map(x => `<li>${artLink(x.name)}<span class="chip sm">${S.esc(x.type)}</span></li>`).join("")}</ul>`; } },
+
+      "speedruns": { title: "Speedruns", icon: "⏱", render: () => {
+        if (!hub.speedruns.length) return "";
+        return `<h2>⏱ Speedruns</h2>
+          <div class="video-ph" style="${S.art("speed" + g.title, g.color)}"><span class="play">▶</span><span>Featured run video (embed placeholder)</span></div>
+          <table class="data-table">
+            <thead><tr><th>Category</th><th>Record</th><th>Runner</th><th>Notes</th></tr></thead>
+            <tbody>${hub.speedruns.map(r => `<tr><td><b>${r.cat && S.srUrl ? `<a href="${S.srUrl(g.id, r.cat)}">${S.esc(r.category)}</a>` : S.esc(r.category)}</b></td><td class="mono">${S.esc(r.time || "—")}</td><td>${S.esc(r.runner || "See leaderboard")}</td><td class="muted">${S.esc(r.note || "")}</td></tr>`).join("")}</tbody>
+          </table>
+          <p class="small">${S.speedruns && S.speedruns[g.id] ? `<a class="btn" href="${S.srUrl(g.id)}">All speedruns and world records →</a>` : `<span class="muted">Records will be pulled from community leaderboards.</span>`}</p>`; } },
+
+      "updates": { title: "Updates & patches", icon: "📰", render: () => {
+        if (!hub.updates.length) return "";
+        return `<h2>📰 ${S.esc(hub.updatesTitle || "Updates, patches & DLC")}</h2>
+          <div class="updates">${hub.updates.map(u => `
+            <div class="update"><div class="u-ver">${S.esc(u.version)}<small>${S.esc(u.date)}</small></div>
+            <div><b>${S.esc(u.title)}</b><ul>${u.notes.map(n => `<li>${S.esc(n)}</li>`).join("")}</ul></div></div>`).join("")}</div>`; } },
+
+      "codes": { title: "Codes", icon: "🎟️", render: () => {
+        if (!hub.codes.length) return "";
+        return `<h2>🎟️ Codes</h2><table class="data-table"><thead><tr><th>Code</th><th>Reward</th><th>Status</th></tr></thead>
+          <tbody>${hub.codes.map(c => `<tr><td class="mono"><b>${S.esc(c.code)}</b></td><td>${S.esc(c.reward)}</td><td><span class="status ${c.status === "Active" ? "on" : ""}">${S.esc(c.status)}</span></td></tr>`).join("")}</tbody></table>`; } },
+
+      "forum": { title: "Forum activity", icon: "💬", render: () => {
+        const threads = S.forumThreads(g.id).slice(0, 5);
+        return `<div class="sec-head"><h2>💬 Forum activity</h2><a class="more" href="${S.forumUrl(g.id)}">Open the forum →</a></div>
+          <ul class="thread-list compact">${threads.map(t => `<li><a href="${S.forumUrl(g.id, t.id)}">${t.pinned ? "📌 " : ""}${S.esc(t.title)}</a>
+            <span class="muted small">${S.esc((S.forumBoards.find(b => b.id === t.board) || {}).name || "")} · ${S.esc(t.author)} ${S.auth.lvl(t.author)} · ${t.posts.length - 1} replies · ${S.esc(t.when)}</span></li>`).join("") || `<li class="muted">No threads yet.</li>`}</ul>`; } },
+
+      "featured": { title: "Featured article", icon: "⭐", render: () => {
+        const f = arts.find(a => a.featured && a.category !== "tech" && a.category !== "competitive") || arts.find(a => a.featured);
+        return f ? `<div class="featured-article">
+          <div class="fa-art" style="${S.art(f.title, g.color)}"></div>
+          <div><span class="tag">Featured article · ${S.cat(f.category).name}</span>
+          <h2><a href="${S.artUrl(f.title)}">${S.esc(f.title)}</a></h2>
+          <p>${S.esc(f.summary)}</p>
+          <a class="more" href="${S.artUrl(f.title)}">Read the full article →</a></div></div>` : ""; } }
+    };
+
+    const LAYOUT = g.hubLayout || S.hubLayout, OVR = S.hubOverride(g);
+    // With a saved override every section can be switched on; otherwise the game's hubLayout decides which appear.
+    const ORDER = LAYOUT.concat(Object.keys(HUB_SECTIONS).filter(id => !LAYOUT.includes(id)));
+    const rendered = ORDER.filter(id => HUB_SECTIONS[id] && (OVR || LAYOUT.includes(id)) && S.shows(g, id)).map(id => [id, HUB_SECTIONS[id].render()]).filter(([, html]) => html);
+    // "Heads up" head-start section: hub.mustKnow = [{ text, a: "Article title" } | { text, href }], 5 to 8 short bullets
+    const mk = hub.mustKnow || [], fmtB = t => S.esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/VERIFY/g, '<span class="badge-verify">VERIFY</span>');
+    const mustKnow = `<section id="must-know" class="hub-box must-know"><h2>📌 Heads up ${mk.length && !hub.mustKnowReviewed ? `<span class="badge-verify mk-draft">Draft, pending review</span>` : ""}</h2><p class="small muted mk-sub">A quick head start before you dive in.</p>${mk.length
+      ? `<ul class="mk-list">${mk.map(x => { const href = x.href === "@basics" ? S.basicsUrl(g.id) : x.href === "@speedruns" ? (S.srUrl ? S.srUrl(g.id) : "#speedruns") : x.href || (x.a ? S.artUrl(x.a) : ""); return `<li>${fmtB(x.text)}${href ? ` <a class="mk-more" href="${href}">${S.esc(x.label || "More")} →</a>` : ""}</li>`; }).join("")}</ul>`
+      : `<p class="muted small">Nobody has written this yet. Five to eight quick tips that give a new ${S.esc(S.short(g))} player a head start go here.</p>`}${S.shows(g, "coach") ? `<p class="small"><a href="${S.coachUrl(g.id)}">🎓 More tips in Coach's corner →</a></p>` : ""}</section>`;
+    $("hubmain").innerHTML = (S.shows(g, "headsUp") ? mustKnow : "") + rendered.map(([id, html]) => `<section id="${id}" class="hub-box">${html}</section>`).join("");
+    $("tiles").innerHTML = rendered.map(([id]) => {
+      const sec = HUB_SECTIONS[id], href = id === "competitive" ? S.compUrl(g.id) : id === "tech" && g.techArticle ? S.artUrl(g.techArticle) : "#" + id;
+      return `<a href="${href}"><span>${sec.icon}</span>${sec.title}</a>`; }).join("");
+    $("tiles").insertAdjacentHTML("afterbegin", (S.shows(g, "headsUp") ? `<a href="#must-know"><span>📌</span>Heads up</a>` : "") + (S.shows(g, "coach") ? `<a href="${S.coachUrl(g.id)}"><span>🎓</span>Coach's corner</a>` : ""));
+
+    // ---- Edit hub layout (admins): a toggle for every part of this hub ----
+    if (S.auth.tierOf() === "admin") {
+      const parts = [["headsUp", "📌", "Heads up"], ["coach", "🎓", "Coach's corner"], ["basics", "📘", "Basic information (menus)"]].concat(ORDER.filter(id => HUB_SECTIONS[id]).map(id => [id, HUB_SECTIONS[id].icon, HUB_SECTIONS[id].title]));
+      const visibleNow = id => (["headsUp", "coach", "basics"].includes(id) || OVR || LAYOUT.includes(id)) && S.shows(g, id);
+      const empty = id => HUB_SECTIONS[id] && !HUB_SECTIONS[id].render();
+      $("tiles").insertAdjacentHTML("afterend", `<details class="hub-editor" id="hub-editor"><summary>⚙ Edit hub layout <span class="muted small">(admin)</span></summary>
+        <p class="small muted">Switch any part of the ${S.esc(S.short(g))} hub on or off. Changes show straight away in this browser. To make them permanent for every visitor, press <b>Copy settings</b> and send them over.</p>
+        <div class="he-list">${parts.map(([id, icon, label]) => `<label class="he-row"><input type="checkbox" data-part="${id}" ${visibleNow(id) ? "checked" : ""}><span>${icon} ${S.esc(label)}</span>${empty(id) ? '<em class="small muted">no content yet, stays hidden</em>' : ""}</label>`).join("")}</div>
+        <div class="he-actions"><button type="button" class="btn btn-primary btn-sm" data-he="save">Save</button><button type="button" class="btn btn-ghost btn-sm" data-he="copy">Copy settings</button><button type="button" class="btn btn-ghost btn-sm" data-he="reset">Reset to default</button><span class="small muted" data-he-msg></span></div></details>`);
+      const ed = $("hub-editor"), msg = t => ed.querySelector("[data-he-msg]").textContent = t;
+      const hiddenNow = () => [...ed.querySelectorAll("input[data-part]")].filter(c => !c.checked).map(c => c.dataset.part);
+      ed.addEventListener("click", e => { const b = e.target.closest("[data-he]"); if (!b) return;
+        if (b.dataset.he === "save") { S.setHubOverride(g, hiddenNow()) ? location.reload() : msg("Couldn't save in this browser."); }
+        if (b.dataset.he === "reset") { S.setHubOverride(g, null); location.reload(); }
+        if (b.dataset.he === "copy") { const txt = `${g.id} hubHide: ${JSON.stringify(hiddenNow())}`;
+          (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => msg("Copied: " + txt), () => msg(txt)); } });
+      if (location.hash === "#hub-editor") ed.open = true;
+    }
+    $("wikilinks").innerHTML = (S.shows(g, "basics") ? `<li><a href="${S.basicsUrl(g.id)}">Basic information</a></li>` : "") + `<li><a href="${S.catUrl(g.id)}">All pages</a></li>` +
+      S.gameCats(g).map(c => `<li><a href="${S.catUrl(g.id, c.id)}">${c.name}</a></li>`).join("");
+    const recent = S.recentChanges.filter(r => arts.some(a => a.title === r.title));
+    $("recent").innerHTML = recent.map(r => `<li><a href="${S.artUrl(r.title)}">${S.esc(r.title)}</a> <span class="muted small">${S.esc(r.note)}, ${S.esc(r.when)}</span></li>`).join("") || `<li class="muted">No edits yet.</li>`;
+    const linked = new Set();
+    arts.forEach(a => JSON.stringify(a.sections || []).replace(/\[\[([^\]|"]+)/g, (_, t) => linked.add(t.trim())));
+    $("wanted").innerHTML = [...linked].filter(t => !has(t)).slice(0, 8).map(t => `<li>${artLink(t)}</li>`).join("") || `<li class="muted">None.</li>`;
+  </script>
+</body>
+</html>
